@@ -1,0 +1,37 @@
+{
+  "name": "pgnflatten",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "chess.js": "^0.10.2",
+    "cm-pgn": "^1.3.2",
+    "core-js": "^3.1.2",
+    "express": "^4.17.1",
+    "fs": "0.0.1-security",
+    "path": "^0.12.7",
+    "pgn-parser": "0.0.9",
+    "vue": "^2.6.10",
+    "vue-router": "^3.0.6"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^4.0.0",
+    "@vue/cli-plugin-eslint": "^4.0.0",
+    "@vue/cli-plugin-router": "^4.0.0",
+    "@vue/cli-service": "^4.0.0",
+    "@vue/eslint-config-prettier": "^5.0.0",
+    "babel-eslint": "^10.0.1",
+    "eslint": "^5.16.0",
+    "eslint-plugin-prettier": "^3.1.0",
+    "eslint-plugin-vue": "^5.0.0",
+    "pegjs": "^0.10.0",
+    "prettier": "^1.18.2",
+    "vue-template-compiler": "^2.6.10"
+  }
+}
