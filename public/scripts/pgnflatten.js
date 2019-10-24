@@ -1,3 +1,10 @@
+/*
+ * This script handles Portable Game Notation (PGN) files and outputs individual PGN's generated from
+ * subvariations.
+ *
+ * Author: Jack Tsang
+ */
+
 let moveNumberPattern = new RegExp("\\d+\\.", "g");
 
 let moveData = new Array();
