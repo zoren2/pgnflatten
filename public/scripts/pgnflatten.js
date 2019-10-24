@@ -23,19 +23,17 @@ let pgn = ["[Event \"Test PGN\"]\n" +
 "\n" +
 "1. e4 (1. d4 g5 2. f4 e5 3. b4) 1... c5 2. c3 f5 3. e5 e6 (3... d5 4. d4 e6 5. f4 (5. f3 g6 (5... g5) 6. g4)) 4. d4 *"];
 
+// removeMarkUp takes an array of PGN strings
 function removeMarkup(text) {
     text = text[0];
-    console.log(text);
     let tagPairs = new RegExp("\\[.*\\]", 'g');
     let noTagPairs = text.replace(tagPairs, "");
 
-    console.log(noTagPairs);
     let comments = new RegExp('\\{.*\\}', 'g');
     let noComments = noTagPairs.replace(comments, "");
 
     // Trim leading whitespace and convert it into a single line
     let finalpgn = noComments.trim();
-    console.log(finalpgn);
     return finalpgn;
 }
 
