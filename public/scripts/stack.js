@@ -42,8 +42,8 @@ class Stack {
 
 // printStack function
     printStack() {
-        var str = "";
-        for (var i = 0; i < this.items.length; i++)
+        let str = "";
+        for (let i = 0; i < this.items.length; i++)
             str += this.items[i] + " ";
         return str;
     }
