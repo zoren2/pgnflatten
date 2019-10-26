@@ -104,7 +104,9 @@ for (const pgn of pgnArray) {
     output += pgn + '\n';
 }
 
-
+/*
+ * Testing scaffold that allows output to a text file to a Blob
+ */
 let textFile = null,
     makeTextFile = function (text) {
         let data = new Blob([text], {type: 'text/plain'});
