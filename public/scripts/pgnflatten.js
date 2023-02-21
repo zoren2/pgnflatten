@@ -5,6 +5,9 @@
  * Author: Jack Tsang
  */
 
+/*
+ * File I/O Variables
+ */
 var textFile = null;
 var output = "";
 
@@ -201,6 +204,8 @@ function getGameMetadata(game) {
 /* Removes unnecessary annotations and white space from game string */
 function removeExtraCharacters(game) {
     let moveNumberPattern = new RegExp("\\d+\\.", "g");
+    let newLine = new RegExp("\n", "g");
+    game = game.replace(newLine, " "); // Get rid of text editor generated new lines in case user edits with a text editor
     game = game.replace(moveNumberPattern, "").trim().replace(/\$\d+/g, "").replace(/[)]/g, ' )').replace(/[(]/g, ' ( ').replace(/[..]/g, ' .. ').replace(/\s\s+/g, ' ');
     return game;
 }
@@ -215,7 +220,7 @@ function updatePGNMarkup(gameString, gameData, subVariationString) {
     gameString = gameData.date + '\n\n' + gameString;
     gameString = gameData.black + '\n' + gameString;
     gameString = gameData.white + '\n' + gameString;
-    gameString = editedEventData + '\n' + gameString + '\n';
+    // gameString = editedEventData + '\n' + gameString + '\n';
 
     return gameString;
 }
