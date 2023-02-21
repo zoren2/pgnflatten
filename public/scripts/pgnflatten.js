@@ -5,137 +5,136 @@
  * Author: Jack Tsang
  */
 
-let moveNumberPattern = new RegExp("\\d+\\.", "g");
-
-let moveData = new Array();
-let pgnArray = new Array(); // Collection of flattened games
-let tempMoveStack = new Stack(); // Variable holds current main move as a temporary variable for subvariations
-let mainMoveStack = new Stack(); // Main game stack
-let moveNumberStack = new Stack(); // Keeps track of Sub-Variation move numbers
-let gameData = {};
-
-let pgn = ["[Event \"Test PGN\"]\n" +
-"[Site \"https://lichess.org/\"]\n" +
-"[White \"Joe Smith\"]\n" +
-"[Black \"John Doe\"]\n" +
-"[Result \"*\"]\n" +
-"[UTCDate \"2019.10.23\"]\n" +
-"[UTCTime \"00:46:21\"]\n" +
-"[Variant \"Standard\"]\n" +
-"[ECO \"B22\"]\n" +
-"[Opening \"Sicilian Defense: Alapin Variation\"]\n" +
-"\n" +
-"1. e4 (1. d4 g5 2. f4 e5 3. b4) 1... c5 2. c3 f5 3. e5 e6 (3... d5 4. d4 e6 5. f4 (5. f3 g6 (5... g5) 6. g4)) 4. d4 *"];
+var textFile = null;
+var output = "";
 
 /*
- * PGN Cleanup and grabbing metadata
- */
-pgn = normalizePGN(pgn); // PGN is in array format - this currently peels off the top
-gameData = getGameMetadata(pgn);
-pgn = removeMarkup(pgn);
+ * Returns output string of fully flattened PGN lines. Is consumed by file I/O function
+ * which currently outputs to NewFile.pgn 
+ * Refactor - allow user to pick file name
+ */ 
+processGameOnClick = () => {
+    let moveData = new Array();
+    let pgnArray = new Array(); // Collection of flattened games
+    let tempMoveStack = new Stack(); // Variable holds current main move as a temporary variable for subvariations
+    let mainMoveStack = new Stack(); // Main game stack
+    let moveNumberStack = new Stack(); // Keeps track of Sub-Variation move numbers
+    let gameData = {};
+    let pgn = new Array();
 
-// Remove extra white space and separating closing brackets with a space.
-pgn = removeExtraCharacters(pgn);
-moveData = pgn.split(" ");
+    pgn.push(document.getElementById('textbox').value);
 
-let moveCounter = 0;
-let legalMove = new RegExp(/^([NBRQK])?([a-h])?([1-8])?(x)?([a-h][1-8])(=[NBRQK])?(\+|#)?$|^O-O(-O)?$/);
+    /*
+     * PGN Cleanup and grabbing metadata
+     */
+    pgn = normalizePGN(pgn); // PGN is in array format - this currently peels off the top
+    gameData = getGameMetadata(pgn);
+    pgn = removeMarkup(pgn);
 
-// Go through every single move in the PGN
-for (const move of moveData) {
-    if (move.match(legalMove)) {
-        mainMoveStack.push(move);
-        moveCounter += 1;
-    } else if (move === "(") {
-        tempMoveStack.push(mainMoveStack.pop());
-        moveNumberStack.push(moveCounter);
-    } else if (move === ")") {
-        /*
-         * Concatenating the game string - move to another function
-         */
-        let gameString = "";
-        let subVariationString = "";
-        let currentMove = moveCounter; // Keep track of current move (highest ply hit by sub-variation)
-        let subVariationPly = currentMove - moveNumberStack.peek(); // Number of plies in sub-variation to pop
+    // Remove extra white space and separating closing brackets with a space.
+    pgn = removeExtraCharacters(pgn);
+    moveData = pgn.split(" ");
 
-        // Obtain the items from the move stack and put them into an array
-        let generateRootMoves = mainMoveStack.printStack().trim().split(" ");
+    let moveCounter = 0;
+    let legalMove = new RegExp(/^([NBRQK])?([a-h])?([1-8])?(x)?([a-h][1-8])(=[NBRQK])?(\+|#)?$|^O-O(-O)?$/);
 
-        subVariationString = populateSubvariationMoveList(moveCounter, subVariationPly, generateRootMoves, moveNumberStack.peek());
-        gameString = populateMoveList(gameString, generateRootMoves);
-        gameString = updatePGNMarkup(gameString, gameData, subVariationString); // Inserting and finalizing into Event Metadata
+    // Go through every single move in the PGN
+    for (const move of moveData) {
+        if (move.match(legalMove)) {
+            mainMoveStack.push(move);
+            moveCounter += 1;
+        } else if (move === "(") {
+            tempMoveStack.push(mainMoveStack.pop());
+            moveNumberStack.push(moveCounter);
+        } else if (move === ")") {
+            /*
+             * Concatenating the game string - move to another function
+             */
+            let gameString = "";
+            let subVariationString = "";
+            let currentMove = moveCounter; // Keep track of current move (highest ply hit by sub-variation)
+            let subVariationPly = currentMove - moveNumberStack.peek(); // Number of plies in sub-variation to pop
 
-        // Add PGN to the output array
-        pgnArray.push(gameString);
+            // Obtain the items from the move stack and put them into an array
+            let generateRootMoves = mainMoveStack.printStack().trim().split(" ");
 
-        for (let i = 0; i < subVariationPly; i++) {
-            mainMoveStack.pop();
-        }
-        /* Swap root move back in */
+            subVariationString = populateSubvariationMoveList(moveCounter, subVariationPly, generateRootMoves, moveNumberStack.peek());
+            gameString = populateMoveList(gameString, generateRootMoves);
+            gameString = updatePGNMarkup(gameString, gameData, subVariationString); // Inserting and finalizing into Event Metadata
 
-        mainMoveStack.push(tempMoveStack.pop()); // Put the main variation back onto the stack
-        moveCounter = moveNumberStack.pop(); // Remove move number tracking current variation
-    }
+            // Add PGN to the output array
+            pgnArray.push(gameString);
 
-    // End of main game, Append final Main PGN
-    else if (move === "*" || move === "1/2-1/2" || move === "1-0" || move === "0-1") {
-        let gameString = "";
-        let subVariationString = "";
+            for (let i = 0; i < subVariationPly; i++) {
+                mainMoveStack.pop();
+            }
+            /* Swap root move back in */
 
-        // Obtain the items from the move stack and put them into an array
-        let generateRootMoves = mainMoveStack.printStack().trim().split(" ");
-
-        subVariationString = populateSubvariationMoveList(moveCounter, moveCounter, generateRootMoves, 0); // 0 is white to move.
-        gameString = populateMoveList(gameString, generateRootMoves);
-        gameString = updatePGNMarkup(gameString, gameData, subVariationString); // Inserting and finalizing into Event Metadata
-
-        // Finalize the PGN
-        pgnArray.push(gameString);
-    }
-
-    // Null move when entering sub-variations
-    else if (move === "..") {
-        continue;
-    }
-
-    // Invalid / Illegal inputs
-    else
-        break;
-}
-
-/*
- * Test for processing and outputting PGN's
- */
-let output = "";
-for (const pgn of pgnArray) {
-    output += pgn + '\n';
-}
-
-/*
- * Testing scaffold that allows output to a text file to a Blob
- */
-let textFile = null,
-    makeTextFile = function (text) {
-        let data = new Blob([text], {type: 'text/plain'});
-
-        // If we are replacing a previously generated file we need to
-        // manually revoke the object URL to avoid memory leaks.
-        if (textFile !== null) {
-            window.URL.revokeObjectURL(textFile);
+            mainMoveStack.push(tempMoveStack.pop()); // Put the main variation back onto the stack
+            moveCounter = moveNumberStack.pop(); // Remove move number tracking current variation
         }
 
-        textFile = window.URL.createObjectURL(data);
+        // End of main game, Append final Main PGN
+        else if (move === "*" || move === "1/2-1/2" || move === "1-0" || move === "0-1") {
+            let gameString = "";
+            let subVariationString = "";
 
-        // returns a URL you can use as a href
-        return textFile;
-    };
+            // Obtain the items from the move stack and put them into an array
+            let generateRootMoves = mainMoveStack.printStack().trim().split(" ");
+
+            subVariationString = populateSubvariationMoveList(moveCounter, moveCounter, generateRootMoves, 0); // 0 is white to move.
+            gameString = populateMoveList(gameString, generateRootMoves);
+            gameString = updatePGNMarkup(gameString, gameData, subVariationString); // Inserting and finalizing into Event Metadata
+
+            // Finalize the PGN
+            pgnArray.push(gameString);
+        }
+
+        // Null move when entering sub-variations
+        else if (move === "..") {
+            continue;
+        }
+
+        // Invalid / Illegal inputs
+        else
+            break;
+    }
+    /*
+     * Test for processing and outputting PGN's
+     */
+
+    for (const pgn of pgnArray) {
+        output += pgn + '\n';
+    }
+    /*
+     * Testing scaffold that allows output to a text file to a Blob
+     */
+
+    return output;
+}
+
+makeTextFile = (text) => {
+    let data = new Blob([text], { type: 'text/plain' });
+    // If we are replacing a previously generated file we need to
+    // manually revoke the object URL to avoid memory leaks.
+    if (textFile !== null) {
+        window.URL.revokeObjectURL(textFile);
+    }
+
+    textFile = window.URL.createObjectURL(data);
+
+    // returns a URL you can use as a href
+    return textFile;
+};
+
 let create = document.getElementById('create'),
     textbox = document.getElementById('textbox');
 
 create.addEventListener('click', function () {
     let link = document.createElement('a');
-    link.setAttribute('download', 'info.txt');
-    link.href = makeTextFile(output);
+
+    link.setAttribute('download', 'NewGame.pgn');
+    link.href = makeTextFile(processGameOnClick());
     document.body.appendChild(link);
 
     // wait for the link to be added to the document
@@ -188,7 +187,7 @@ function getGameMetadata(game) {
         blackNameTag = "[Black \"NN\"]";
     }
     if (dateTag == null) {
-        dateTag = "[Date " + Date.now() + " ]";
+        dateTag = "[Date " + new Date() + " ]";
     }
 
     return {
@@ -201,18 +200,18 @@ function getGameMetadata(game) {
 
 /* Removes unnecessary annotations and white space from game string */
 function removeExtraCharacters(game) {
+    let moveNumberPattern = new RegExp("\\d+\\.", "g");
     game = game.replace(moveNumberPattern, "").trim().replace(/\$\d+/g, "").replace(/[)]/g, ' )').replace(/[(]/g, ' ( ').replace(/[..]/g, ' .. ').replace(/\s\s+/g, ' ');
     return game;
 }
 
 /* Updates PGN with proper markup for future parsing */
 function updatePGNMarkup(gameString, gameData, subVariationString) {
-    let editedEventData = "";
-    if (subVariationString === "") {
-        editedEventData = gameData.event[0].slice(0, -2) + ": " + gameString + gameData.event[0].slice(-2);
-    } else {
-        editedEventData = gameData.event[0].slice(0, -2) + ": " + subVariationString + gameData.event[0].slice(-2);
-    }
+    let editedEventData = `[Event "${subVariationString}" ]`;
+
+    console.log(subVariationString);
+
+    console.log("EditedEventData: " + editedEventData);
     gameString = gameData.date + '\n\n' + gameString;
     gameString = gameData.black + '\n' + gameString;
     gameString = gameData.white + '\n' + gameString;
